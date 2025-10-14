@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NYC Taxi Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-container">
+        <div class="header">
+            <h1>NYC Taxi Trip Dashboard</h1>
+            <p>Urban Mobility Analysis - Spring 2025</p>
+        </div>
+
+        <div class="content">
+            <!-- Filter Section -->
+            <div class="filter-box">
+                <h2>Filters</h2>
+                <div class="filter-row">
+                    <div class="input-box">
+                        <label>Start Date:</label>
+                        <input type="date" id="startDate">
+                    </div>
+                    <div class="input-box">
+                        <label>End Date:</label>
+                        <input type="date" id="endDate">
+                    </div>
+                    <div class="input-box">
+                        <label>Min Distance (km):</label>
+                        <input type="number" id="minDistance" placeholder="0">
+                    </div>
+                    <div class="input-box">
+                        <label>Max Distance (km):</label>
+                        <input type="number" id="maxDistance" placeholder="100">
+                    </div>
+                </div>
+                <div class="filter-row">
+                    <div class="input-box">
+                        <label>Min Fare ($):</label>
+                        <input type="number" id="minFare" placeholder="0">
+                    </div>
+                    <div class="input-box">
+                        <label>Max Fare ($):</label>
+                        <input type="number" id="maxFare" placeholder="200">
+                    </div>
+                    <div class="input-box">
+                        <label>Passengers:</label>
+                        <select id="passengerCount">
+                            <option value="">All</option>
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                            <option value="4">4</option>
+                            <option value="5">5+</option>
+                        </select>
+                    </div>
+                    <div class="input-box">
+                        <label>Time Period:</label>
+                        <select id="timeOfDay">
+                            <option value="">All Day</option>
+                            <option value="morning">Morning</option>
+                            <option value="afternoon">Afternoon</option>
+                            <option value="evening">Evening</option>
+                            <option value="night">Night</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="btn-container">
+                    <button class="apply-btn" onclick="applyFilters()">Apply Filters</button>
+                    <button class="reset-btn" onclick="resetFilters()">Reset</button>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="stats-container">
+                <div class="stat-box">
+                    <h3>Total Trips</h3>
+                    <p class="stat-number" id="totalTrips">0</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Avg Fare</h3>
+                    <p class="stat-number" id="avgFare">$0</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Avg Distance</h3>
+                    <p class="stat-number" id="avgDistance">0 km</p>
+                </div>
+                <div class="stat-box">
+                    <h3>Avg Duration</h3>
+                    <p class="stat-number" id="avgDuration">0 min</p>
+                </div>
+            </div>
+
+            <!-- Insights -->
+            <div class="insight-box">
+                <h3>Key Insight:</h3>
+                <p id="mainInsight">Loading data...</p>
+            </div>
+
+            <!-- Charts -->
+            <div class="charts-row">
+                <div class="chart-box">
+                    <h3>Trips by Hour</h3>
+                    <div class="chart" id="hourChart"></div>
+                </div>
+                <div class="chart-box">
+                    <h3>Fare by Distance Range</h3>
+                    <div class="chart" id="fareChart"></div>
+                </div>
+            </div>
+
+            <div class="chart-box full-width">
+                <h3>Speed Distribution</h3>
+                <div class="chart" id="speedChart"></div>
+            </div>
+
+            <!-- Data Table -->
+            <div class="table-container">
+                <h3>Trip Records</h3>
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortBy(0)">ID</th>
+                            <th onclick="sortBy(1)">Pickup Time</th>
+                            <th onclick="sortBy(2)">Distance (km)</th>
+                            <th onclick="sortBy(3)">Duration (min)</th>
+                            <th onclick="sortBy(4)">Fare ($)</th>
+                            <th onclick="sortBy(5)">Speed (km/h)</th>
+                            <th onclick="sortBy(6)">Passengers</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <!-- Data populated by JS -->
+                    </tbody>
+                </table>
+                <div class="pagination">
+                    <button onclick="prevPage()" id="prevBtn">Previous</button>
+                    <span>Page <span id="pageNum">1</span> of <span id="totalPg">1</span></span>
+                    <button onclick="nextPage()" id="nextBtn">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
