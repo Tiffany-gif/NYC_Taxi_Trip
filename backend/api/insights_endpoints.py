@@ -4,52 +4,38 @@ Routes for insights and analytics API endpoints
 from backend.config.db_connection import get_db_connection
 import os
 import sys
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 import mysql.connector
+
 # Add the backend directory to the path for imports
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if backend_dir not in sys.path:
     sys.path.append(backend_dir)
 
-# Create a Blueprint for insights routes
 insights_bp = Blueprint('insights', __name__)
-
-
- 
-
 
 @insights_bp.route('/stats', methods=['GET'])
 def get_trip_stats():
-    """Get statistics about the trips data"""
     try:
         conn = get_db_connection()
         if not conn:
             return jsonify({"error": "Database connection failed"}), 500
 
         cursor = conn.cursor(dictionary=True)
-
-        # Get various statistics
         stats = {}
 
-        # Total number of trips
         cursor.execute("SELECT COUNT(*) as count FROM trips")
         stats["total_trips"] = cursor.fetchone()['count']
 
-        # Average trip duration (minutes)
-        cursor.execute(
-            "SELECT AVG(trip_duration_min) as avg_duration FROM trips")
+        cursor.execute("SELECT AVG(trip_duration_min) as avg_duration FROM trips")
         stats["avg_duration_min"] = cursor.fetchone()['avg_duration']
 
-        # Average speed
         cursor.execute("SELECT AVG(speed_kmh) as avg_speed FROM trips")
         stats["avg_speed_kmh"] = cursor.fetchone()['avg_speed']
 
-        # Average distance
-        cursor.execute(
-            "SELECT AVG(trip_distance_km) as avg_distance FROM trips")
+        cursor.execute("SELECT AVG(trip_distance_km) as avg_distance FROM trips")
         stats["avg_distance_km"] = cursor.fetchone()['avg_distance']
 
-        # Most common passenger count
         cursor.execute("""
             SELECT passenger_count, COUNT(*) as count 
             FROM trips 
@@ -68,18 +54,14 @@ def get_trip_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @insights_bp.route('/hourly-pattern', methods=['GET'])
 def get_hourly_pattern():
-    """Get trip counts by hour of day"""
     try:
         conn = get_db_connection()
         if not conn:
             return jsonify({"error": "Database connection failed"}), 500
 
         cursor = conn.cursor(dictionary=True)
-
-        # Extract hour from pickup_datetime and count trips
         query = """
         SELECT HOUR(pickup_datetime) as hour, COUNT(*) as trip_count 
         FROM trips 
@@ -96,3 +78,13 @@ def get_hourly_pattern():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+if __name__ == "__main__":
+    print("Testing database connection...")
+    conn = get_db_connection()
+    if conn:
+        print("Database connection successful!")
+        conn.close()
+    else:
+        print("Database connection failed!")
+

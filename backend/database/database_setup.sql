@@ -7,7 +7,7 @@ CREATE TABLE vendors (
 );
 
 CREATE TABLE trips (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+   trip_id INT AUTO_INCREMENT PRIMARY KEY,
     
     vendor_id VARCHAR(10) NOT NULL,
     
@@ -34,7 +34,9 @@ CREATE TABLE trips (
 );
 
 CREATE INDEX idx_pickup_datetime ON trips (pickup_datetime);
+CREATE INDEX idx_dropoff_datetime ON trips (dropoff_datetime);
+CREATE INDEX idx_passenger_count ON trips (passenger_count);
+CREATE INDEX idx_speed_kmh ON trips (speed_kmh);
 CREATE INDEX idx_vendor_time ON trips (vendor_id, pickup_datetime);
 CREATE INDEX idx_pickup_coords ON trips (pickup_latitude, pickup_longitude);
 CREATE INDEX idx_dropoff_coords ON trips (dropoff_latitude, dropoff_longitude);
-
