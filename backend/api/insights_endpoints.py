@@ -1,12 +1,11 @@
 """
 Routes for insights and analytics API endpoints
 """
-from config.db_config import get_db_config
+from backend.config.db_connection import get_db_connection
 import os
 import sys
 from flask import Blueprint, jsonify, request
 import mysql.connector
-
 # Add the backend directory to the path for imports
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if backend_dir not in sys.path:
@@ -16,15 +15,7 @@ if backend_dir not in sys.path:
 insights_bp = Blueprint('insights', __name__)
 
 
-def get_db_connection():
-    """Helper function to get a database connection"""
-    try:
-        config = get_db_config()
-        conn = mysql.connector.connect(**config)
-        return conn
-    except mysql.connector.Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
+ 
 
 
 @insights_bp.route('/stats', methods=['GET'])

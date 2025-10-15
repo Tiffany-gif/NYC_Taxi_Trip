@@ -1,11 +1,12 @@
 """
 Routes for trip data API endpoints
 """
-from config.db_config import get_db_config
+from backend.config.db_connection import get_db_connection
 import os
 import sys
 from flask import Blueprint, jsonify, request
 import mysql.connector
+from backend.utils.db_insert import insert_from_csv, insert_dataframe
 
 # Add the backend directory to the path for imports
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -13,21 +14,8 @@ if backend_dir not in sys.path:
     sys.path.append(backend_dir)
 
 # Import config after path is set
-
-
 # Create a Blueprint for trips routes
 trips_bp = Blueprint('trips', __name__)
-
-
-def get_db_connection():
-    """Helper function to get a database connection"""
-    try:
-        config = get_db_config()
-        conn = mysql.connector.connect(**config)
-        return conn
-    except mysql.connector.Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
 
 
 @trips_bp.route('/', methods=['GET'])
@@ -95,6 +83,19 @@ def get_trips():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
+@trips_bp.route('/ingest', methods=['POST'])
+def ingest_trips():
+    """Ingest trips from CSV (path in JSON body optional: {"csv_path": "..."})."""
+    try:
+        data = request.get_json(silent=True) or {}
+        csv_path = data.get('csv_path') if isinstance(data, dict) else None
+        inserted = insert_from_csv(csv_path)
+        return jsonify({"inserted": inserted}), 201
+    except FileNotFoundError:
+        return jsonify({"error": "CSV file not found"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @trips_bp.route('/<string:trip_id>', methods=['GET'])
 def get_trip(trip_id):
