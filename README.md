@@ -164,17 +164,15 @@ The frontend will connect to your Flask backend via API calls.
 
 ---
 
-## 📊 Example Features and Insights
+## Example Features and Insights
 
-- **Trip Efficiency Algorithm** — Custom ranking of trip speeds and durations  
 - **Anomaly Detection** — Detect outlier trips using a hand-coded logic (no external ML libs)  
-- **Data Visualization** — Charts and maps displaying patterns in pickup density, trip speeds, and fares
 
 ---
 
-## 🧠 Custom Algorithm
+## Custom Algorithm
 
-A manually implemented efficiency ranking algorithm was created to evaluate trip performance without relying on libraries like `heapq` or `sort_values`.
+A manually implemented an anomoly detectionn algorithm was created to check if there's any anomolies in the the data without relying on libraries like `heapq` or `sort_values`.
 
 **Logic:** Sort trips by their average speed (distance/time) and flag outliers for review.  
 **Complexity:** O(n log n) for sorting; O(n) for filtering.
