@@ -9,11 +9,9 @@ def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
 
-    # Register blueprints
     app.register_blueprint(trips_bp, url_prefix='/api/trips')
     app.register_blueprint(insights_bp, url_prefix='/api/insights')
 
-    # Simple home route
     @app.route('/')
     def home():
         return {

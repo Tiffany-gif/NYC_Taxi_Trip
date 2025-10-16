@@ -8,7 +8,7 @@ let sortAsc = true;
 let anomalyFlags = {}; // Store anomaly detection results
 
 // Initialize when page loads
-window.onload = function() {
+window.onload = function () {
     loadData();
 };
 
@@ -20,12 +20,13 @@ function loadData() {
     updateAll();
 }
 
+
 // Generate sample data
 function generateSampleTrips() {
     let trips = [];
     let dates = ['2024-01-15', '2024-01-16', '2024-01-17', '2024-01-18'];
-    
-    for(let i = 0; i < 150; i++) {
+
+    for (let i = 0; i < 150; i++) {
         let dist = Math.random() * 25 + 0.3;
         let dur = Math.random() * 50 + 3;
         let fare = Math.random() * 60 + 3;
@@ -34,15 +35,15 @@ function generateSampleTrips() {
         let date = dates[Math.floor(Math.random() * dates.length)];
         let hour = Math.floor(Math.random() * 24);
         let min = Math.floor(Math.random() * 60);
-        
+
         // Add some anomalies intentionally
-        if(i % 20 === 0) {
+        if (i % 20 === 0) {
             fare = Math.random() * 200 + 100; // Very high fare
         }
-        if(i % 25 === 0) {
+        if (i % 25 === 0) {
             speed = Math.random() * 100 + 120; // Impossible speed
         }
-        
+
         trips.push({
             id: 'T' + (1000 + i),
             time: date + ' ' + String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0'),
@@ -74,34 +75,34 @@ function generateSampleTrips() {
 
 function runAnomalyDetection() {
     let startTime = performance.now();
-    
+
     // Detect anomalies in fare
     let fareAnomalies = detectOutliers(tripData, 'fare');
-    
+
     // Detect anomalies in speed
     let speedAnomalies = detectOutliers(tripData, 'speed');
-    
+
     // Detect anomalies in fare per km ratio
     let fareRatioAnomalies = detectFareRatioAnomalies(tripData);
-    
+
     // Combine all anomalies (remove duplicates manually)
     let allAnomalies = combineAnomalies(fareAnomalies, speedAnomalies, fareRatioAnomalies);
-    
+
     let endTime = performance.now();
     let executionTime = (endTime - startTime).toFixed(2);
-    
+
     // Update UI
     document.getElementById('anomalyCount').textContent = allAnomalies.length;
     document.getElementById('totalAnalyzed').textContent = tripData.length;
-    
+
     displayAnomalies(allAnomalies, executionTime);
-    
+
     // Mark anomalies in global data
     anomalyFlags = {};
-    for(let i = 0; i < allAnomalies.length; i++) {
+    for (let i = 0; i < allAnomalies.length; i++) {
         anomalyFlags[allAnomalies[i].trip.id] = allAnomalies[i];
     }
-    
+
     updateTable();
 }
 
@@ -109,13 +110,13 @@ function runAnomalyDetection() {
 function detectOutliers(data, field) {
     // Step 1: Extract values manually
     let values = [];
-    for(let i = 0; i < data.length; i++) {
+    for (let i = 0; i < data.length; i++) {
         values[i] = data[i][field];
     }
-    
+
     // Step 2: Manual Bubble Sort (no built-in sort!)
     let sortedValues = manualBubbleSort(values);
-    
+
     // Step 3: Calculate Q1, Q3, IQR manually
     let n = sortedValues.length;
     let q1Index = Math.floor(n * 0.25);
@@ -123,25 +124,25 @@ function detectOutliers(data, field) {
     let q1 = sortedValues[q1Index];
     let q3 = sortedValues[q3Index];
     let iqr = q3 - q1;
-    
+
     // Step 4: Calculate bounds
     let lowerBound = q1 - 1.5 * iqr;
     let upperBound = q3 + 1.5 * iqr;
-    
+
     // Step 5: Find outliers manually
     let outliers = [];
-    for(let i = 0; i < data.length; i++) {
-        if(data[i][field] < lowerBound || data[i][field] > upperBound) {
+    for (let i = 0; i < data.length; i++) {
+        if (data[i][field] < lowerBound || data[i][field] > upperBound) {
             outliers[outliers.length] = {
                 trip: data[i],
-                reason: field === 'fare' ? 
+                reason: field === 'fare' ?
                     'Unusual fare: $' + data[i][field].toFixed(2) + ' (normal range: $' + lowerBound.toFixed(2) + ' - $' + upperBound.toFixed(2) + ')' :
                     'Unusual speed: ' + data[i][field].toFixed(2) + ' km/h (normal range: ' + lowerBound.toFixed(2) + ' - ' + upperBound.toFixed(2) + ' km/h)',
                 type: field
             };
         }
     }
-    
+
     return outliers;
 }
 
@@ -149,14 +150,14 @@ function detectOutliers(data, field) {
 function manualBubbleSort(arr) {
     let sorted = [];
     // Copy array manually
-    for(let i = 0; i < arr.length; i++) {
+    for (let i = 0; i < arr.length; i++) {
         sorted[i] = arr[i];
     }
-    
+
     // Bubble sort
-    for(let i = 0; i < sorted.length - 1; i++) {
-        for(let j = 0; j < sorted.length - i - 1; j++) {
-            if(sorted[j] > sorted[j + 1]) {
+    for (let i = 0; i < sorted.length - 1; i++) {
+        for (let j = 0; j < sorted.length - i - 1; j++) {
+            if (sorted[j] > sorted[j + 1]) {
                 // Manual swap
                 let temp = sorted[j];
                 sorted[j] = sorted[j + 1];
@@ -164,31 +165,31 @@ function manualBubbleSort(arr) {
             }
         }
     }
-    
+
     return sorted;
 }
 
 // Detect anomalies in fare/distance ratio
 function detectFareRatioAnomalies(data) {
     let anomalies = [];
-    
-    for(let i = 0; i < data.length; i++) {
+
+    for (let i = 0; i < data.length; i++) {
         let ratio = data[i].fare / data[i].distance;
-        
+
         // Check for suspicious patterns
-        if(ratio > 50) { // More than $50 per km
+        if (ratio > 50) { // More than $50 per km
             anomalies[anomalies.length] = {
                 trip: data[i],
                 reason: 'Suspicious fare ratio: $' + ratio.toFixed(2) + '/km (very high)',
                 type: 'ratio'
             };
-        } else if(data[i].distance < 0.5 && data[i].fare > 30) {
+        } else if (data[i].distance < 0.5 && data[i].fare > 30) {
             anomalies[anomalies.length] = {
                 trip: data[i],
                 reason: 'Short trip with high fare: ' + data[i].distance + 'km costs $' + data[i].fare,
                 type: 'ratio'
             };
-        } else if(data[i].speed > 150) {
+        } else if (data[i].speed > 150) {
             anomalies[anomalies.length] = {
                 trip: data[i],
                 reason: 'Impossible speed: ' + data[i].speed.toFixed(2) + ' km/h',
@@ -196,7 +197,7 @@ function detectFareRatioAnomalies(data) {
             };
         }
     }
-    
+
     return anomalies;
 }
 
@@ -204,34 +205,34 @@ function detectFareRatioAnomalies(data) {
 function combineAnomalies(arr1, arr2, arr3) {
     let combined = [];
     let seen = {};
-    
+
     // Add from arr1
-    for(let i = 0; i < arr1.length; i++) {
+    for (let i = 0; i < arr1.length; i++) {
         let id = arr1[i].trip.id;
-        if(!seen[id]) {
+        if (!seen[id]) {
             combined[combined.length] = arr1[i];
             seen[id] = true;
         }
     }
-    
+
     // Add from arr2
-    for(let i = 0; i < arr2.length; i++) {
+    for (let i = 0; i < arr2.length; i++) {
         let id = arr2[i].trip.id;
-        if(!seen[id]) {
+        if (!seen[id]) {
             combined[combined.length] = arr2[i];
             seen[id] = true;
         }
     }
-    
+
     // Add from arr3
-    for(let i = 0; i < arr3.length; i++) {
+    for (let i = 0; i < arr3.length; i++) {
         let id = arr3[i].trip.id;
-        if(!seen[id]) {
+        if (!seen[id]) {
             combined[combined.length] = arr3[i];
             seen[id] = true;
         }
     }
-    
+
     return combined;
 }
 
@@ -239,19 +240,19 @@ function combineAnomalies(arr1, arr2, arr3) {
 function displayAnomalies(anomalies, execTime) {
     let container = document.getElementById('anomalyResults');
     container.innerHTML = '';
-    
-    if(anomalies.length === 0) {
+
+    if (anomalies.length === 0) {
         container.innerHTML = '<p style="text-align: center; color: #27ae60; padding: 20px;">✓ No anomalies detected! All trips appear normal.</p>';
         return;
     }
-    
+
     // Show first 9 anomalies
     let displayCount = anomalies.length > 9 ? 9 : anomalies.length;
-    for(let i = 0; i < displayCount; i++) {
+    for (let i = 0; i < displayCount; i++) {
         let anomaly = anomalies[i];
         let card = document.createElement('div');
         card.className = 'anomaly-card';
-        
+
         card.innerHTML = `
             <div class="anomaly-card-header">
                 <h4>Trip ${anomaly.trip.id}</h4>
@@ -265,9 +266,8 @@ function displayAnomalies(anomalies, execTime) {
                 <div class="anomaly-reason">${anomaly.reason}</div>
             </div>
         `;
-        
+
         container.appendChild(card);
     }
-    
+
 }
-    

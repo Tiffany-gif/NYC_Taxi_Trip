@@ -7,6 +7,11 @@ It leverages the official **NYC Taxi Trip Dataset**, which contains detailed tri
 
 The system was built to demonstrate data engineering, backend API development, and frontend visualization capabilities — offering an interactive platform for users to understand how the city moves.
 
+## Video Walkthrough
+
+Watch our 5-minute demo here:  
+[![Watch the video](https://youtu.be/Ib-YxcqD2xA)](https://youtu.be/Ib-YxcqD2xA)
+
 ---
 
 ## Project Structure
@@ -175,7 +180,7 @@ The frontend will connect to your Flask backend via API calls.
 A manually implemented an anomoly detectionn algorithm was created to check if there's any anomolies in the the data without relying on libraries like `heapq` or `sort_values`.
 
 **Logic:** Sort trips by their average speed (distance/time) and flag outliers for review.  
-**Complexity:** O(n log n) for sorting; O(n) for filtering.
+**Complexity:** O(n^2) for sorting; O(n) for filtering.
 
 ---
 
@@ -186,6 +191,7 @@ A manually implemented an anomoly detectionn algorithm was created to check if t
 | Backend | Python (Flask), SQL (MySQL) |
 | Frontend | HTML, CSS, JS |
 | Database | MySQL |
+
 
 ---
 
