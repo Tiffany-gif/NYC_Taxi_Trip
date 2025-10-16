@@ -28,7 +28,6 @@ def create_app():
 
 
 if __name__ == '__main__':
-    # Auto-ingest on startup if trips table is empty
     try:
         conn = get_db_connection()
         if conn is None:
@@ -40,7 +39,8 @@ if __name__ == '__main__':
         conn.close()
         if count == 0:
             inserted = insert_all_from_cleaned()
-            print(f"Auto-ingest completed. Inserted {inserted} rows from data/cleaned.")
+            print(
+                f"Auto-ingest completed. Inserted {inserted} rows from data/cleaned.")
     except Exception as e:
         print(f"Auto-ingest skipped due to error: {e}")
 

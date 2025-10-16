@@ -17,4 +17,3 @@ def get_db_connection() -> Optional[MySQLConnection]:
         # Keep logging minimal here; endpoint layers can decide how to handle
         print(f"Error connecting to MySQL: {error}")
         return None
-

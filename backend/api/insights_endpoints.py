@@ -1,7 +1,6 @@
 """
 Routes for insights and analytics API endpoints
 """
-from backend.utils.efficiency_algorithm import rank_trips_by_efficiency
 from backend.config.db_connection import get_db_connection
 import os
 import sys
@@ -13,22 +12,6 @@ if backend_dir not in sys.path:
     sys.path.append(backend_dir)
 
 insights_bp = Blueprint('insights', __name__)
-
-
-@insights_bp.route('/top-efficient-trips', methods=['POST'])
-def top_efficient_trips():
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(
-            "SELECT trip_id, trip_distance_km, trip_duration_min, fare_amount FROM trips LIMIT 100")
-        trips = cursor.fetchall()
-        ranked_trips = rank_trips_by_efficiency(trips)
-        cursor.close()
-        conn.close()
-        return jsonify(ranked_trips[:10])
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
 
 @insights_bp.route('/stats', methods=['GET'])
