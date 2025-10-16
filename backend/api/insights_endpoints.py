@@ -1,6 +1,7 @@
 """
 Routes for insights and analytics API endpoints
 """
+from backend.config.db_connection import get_db_connection
 import os
 import sys
 from flask import Blueprint, jsonify
@@ -10,18 +11,8 @@ backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if backend_dir not in sys.path:
     sys.path.append(backend_dir)
 
-from config.db_config import get_db_config
-
 insights_bp = Blueprint('insights', __name__)
 
-def get_db_connection():
-    try:
-        config = get_db_config()
-        conn = mysql.connector.connect(**config)
-        return conn
-    except mysql.connector.Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
 
 @insights_bp.route('/stats', methods=['GET'])
 def get_trip_stats():
@@ -36,20 +27,16 @@ def get_trip_stats():
         cursor.execute("SELECT COUNT(*) as count FROM trips")
         stats["total_trips"] = cursor.fetchone()['count']
 
-        cursor.execute("SELECT AVG(duration_min) as avg_duration FROM trips")
+        cursor.execute(
+            "SELECT AVG(trip_duration_min) as avg_duration FROM trips")
         stats["avg_duration_min"] = cursor.fetchone()['avg_duration']
 
         cursor.execute("SELECT AVG(speed_kmh) as avg_speed FROM trips")
         stats["avg_speed_kmh"] = cursor.fetchone()['avg_speed']
 
-        cursor.execute("SELECT AVG(distance_km) as avg_distance FROM trips")
+        cursor.execute(
+            "SELECT AVG(trip_distance_km) as avg_distance FROM trips")
         stats["avg_distance_km"] = cursor.fetchone()['avg_distance']
-
-        cursor.execute("SELECT AVG(fare_per_km) as avg_fare_per_km FROM trips")
-        stats["avg_fare_per_km"] = cursor.fetchone()['avg_fare_per_km']
-
-        cursor.execute("SELECT SUM(total_fare) as total_revenue FROM trips")
-        stats["total_revenue"] = cursor.fetchone()['total_revenue']
 
         cursor.execute("""
             SELECT passenger_count, COUNT(*) as count 
@@ -69,6 +56,7 @@ def get_trip_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+
 @insights_bp.route('/hourly-pattern', methods=['GET'])
 def get_hourly_pattern():
     try:
@@ -78,9 +66,9 @@ def get_hourly_pattern():
 
         cursor = conn.cursor(dictionary=True)
         query = """
-        SELECT HOUR(trip_datetime) as hour, COUNT(*) as trip_count 
+        SELECT HOUR(pickup_datetime) as hour, COUNT(*) as trip_count 
         FROM trips 
-        GROUP BY HOUR(trip_datetime)
+        GROUP BY HOUR(pickup_datetime)
         ORDER BY hour
         """
         cursor.execute(query)
@@ -93,13 +81,3 @@ def get_hourly_pattern():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
-if __name__ == "__main__":
-    print("Testing database connection...")
-    conn = get_db_connection()
-    if conn:
-        print("Database connection successful!")
-        conn.close()
-    else:
-        print("Database connection failed!")
-

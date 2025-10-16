@@ -39,8 +39,6 @@ df["pickup_datetime"] = pd.to_datetime(df["pickup_datetime"], errors="coerce")
 df["dropoff_datetime"] = pd.to_datetime(
     df["dropoff_datetime"], errors="coerce")
 
-# Calculate basic trip distance (Haversine)
-
 
 def haversine(lat1, lon1, lat2, lon2):
     R = 6371  # Earth radius in km
