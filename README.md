@@ -197,7 +197,7 @@ A manually implemented efficiency ranking algorithm was created to evaluate trip
 |------|------|
 | Emma Tiffany Umwari | Backend & Data Processing |
 | Julius Kate Lorna Iriza| Frontend & Documentation |
-| Keyla Bineza Nyacyesa | Database Design & Integration |
+| Keyla Bineza Nyacyesa | Backend&Database Integration |
 
 ---
 
