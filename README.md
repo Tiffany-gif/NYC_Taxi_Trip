@@ -195,7 +195,7 @@ A manually implemented an anomoly detectionn algorithm was created to check if t
 |------|------|
 | Emma Tiffany Umwari | Backend & Data Processing |
 | Julius Kate Lorna Iriza| Frontend & Documentation |
-| Keyla Bineza Nyacyesa | Database Design & Integration |
+| Keyla Bineza Nyacyesa | Backend&Database Integration |
 
 ---
 
