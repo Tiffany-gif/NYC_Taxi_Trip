@@ -150,6 +150,119 @@ button {
     font-weight: bold;
 }
 
+/* Anomaly Detection Section - NEW */
+.anomaly-section {
+    background: #fff5f5;
+    border: 2px solid #fc8181;
+    padding: 20px;
+    border-radius: 6px;
+    margin-bottom: 25px;
+}
+
+.anomaly-section h2 {
+    color: #c53030;
+    margin-bottom: 10px;
+    font-size: 18px;
+}
+
+.anomaly-description {
+    color: #666;
+    margin-bottom: 15px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.anomaly-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.detect-btn {
+    background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+    color: white;
+    padding: 12px 24px;
+    font-size: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(252, 129, 129, 0.3);
+}
+
+.detect-btn:hover {
+    background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+    transform: translateY(-2px);
+}
+
+.anomaly-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 14px;
+    color: #555;
+}
+
+.anomaly-stats strong {
+    color: #c53030;
+    font-size: 16px;
+}
+
+.anomaly-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.anomaly-card {
+    background: white;
+    border: 1px solid #fc8181;
+    border-radius: 6px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.anomaly-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.anomaly-card-header h4 {
+    font-size: 14px;
+    color: #c53030;
+}
+
+.anomaly-badge {
+    background: #fc8181;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.anomaly-details {
+    font-size: 13px;
+    color: #555;
+    line-height: 1.6;
+}
+
+.anomaly-details div {
+    margin-bottom: 5px;
+}
+
+.anomaly-reason {
+    background: #fff5f5;
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #c53030;
+    font-style: italic;
+}
+
 /* Insight */
 .insight-box {
     background: #fff3cd;
@@ -285,6 +398,16 @@ tbody tr:hover {
     background: #f8f9fa;
 }
 
+.status-normal {
+    color: #27ae60;
+    font-weight: bold;
+}
+
+.status-anomaly {
+    color: #e74c3c;
+    font-weight: bold;
+}
+
 .pagination {
     padding: 15px;
     background: #f8f9fa;
@@ -323,5 +446,9 @@ tbody tr:hover {
     
     .input-box {
         min-width: 100%;
+    }
+    
+    .anomaly-results {
+        grid-template-columns: 1fr;
     }
 }

@@ -12,8 +12,8 @@ except Exception:
 
 def get_db_config():
     return {
-        'user': os.environ.get('DB_USER', 'root'),
-        'password': os.environ.get('DB_PASSWORD', ''),
+        'user': os.environ.get('DB_USER', 'nyc_user'),
+        'password': os.environ.get('DB_PASSWORD', 'nyc123!'),
         'host': os.environ.get('DB_HOST', 'localhost'),
         'database': os.environ.get('DB_NAME', 'trip_data')
     }

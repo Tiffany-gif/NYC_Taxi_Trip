@@ -5,6 +5,7 @@ let currentPage = 1;
 let rowsPerPage = 10;
 let sortCol = -1;
 let sortAsc = true;
+let anomalyFlags = {}; // Store anomaly detection results
 
 // Initialize when page loads
 window.onload = function() {
@@ -34,6 +35,14 @@ function generateSampleTrips() {
         let hour = Math.floor(Math.random() * 24);
         let min = Math.floor(Math.random() * 60);
         
+        // Add some anomalies intentionally
+        if(i % 20 === 0) {
+            fare = Math.random() * 200 + 100; // Very high fare
+        }
+        if(i % 25 === 0) {
+            speed = Math.random() * 100 + 120; // Impossible speed
+        }
+        
         trips.push({
             id: 'T' + (1000 + i),
             time: date + ' ' + String(hour).padStart(2, '0') + ':' + String(min).padStart(2, '0'),
@@ -47,317 +56,218 @@ function generateSampleTrips() {
     return trips;
 }
 
-// Apply filters
-function applyFilters() {
-    let start = document.getElementById('startDate').value;
-    let end = document.getElementById('endDate').value;
-    let minDist = parseFloat(document.getElementById('minDistance').value) || 0;
-    let maxDist = parseFloat(document.getElementById('maxDistance').value) || 999999;
-    let minFare = parseFloat(document.getElementById('minFare').value) || 0;
-    let maxFare = parseFloat(document.getElementById('maxFare').value) || 999999;
-    let passengers = document.getElementById('passengerCount').value;
-    let timeSlot = document.getElementById('timeOfDay').value;
-    
-    filteredData = tripData.filter(function(trip) {
-        let date = trip.time.split(' ')[0];
-        let hour = parseInt(trip.time.split(' ')[1].split(':')[0]);
-        
-        // Date filter
-        if(start && date < start) return false;
-        if(end && date > end) return false;
-        
-        // Distance filter
-        if(trip.distance < minDist || trip.distance > maxDist) return false;
-        
-        // Fare filter
-        if(trip.fare < minFare || trip.fare > maxFare) return false;
-        
-        // Passenger filter
-        if(passengers) {
-            if(passengers === '5' && trip.passengers < 5) return false;
-            if(passengers !== '5' && trip.passengers !== parseInt(passengers)) return false;
-        }
-        
-        // Time of day filter
-        if(timeSlot === 'morning' && (hour < 6 || hour >= 12)) return false;
-        if(timeSlot === 'afternoon' && (hour < 12 || hour >= 18)) return false;
-        if(timeSlot === 'evening' && (hour < 18 || hour >= 24)) return false;
-        if(timeSlot === 'night' && hour >= 6) return false;
-        
-        return true;
-    });
-    
-    currentPage = 1;
-    updateAll();
-}
+/* ============================================
+   CUSTOM ANOMALY DETECTION ALGORITHM
+   ============================================
+   This is a manual implementation without using
+   built-in functions like sort(), filter(), etc.
+   
+   Algorithm: IQR (Interquartile Range) Method
+   - Manually sort data
+   - Calculate Q1 (25th percentile) and Q3 (75th percentile)
+   - Calculate IQR = Q3 - Q1
+   - Identify outliers as values outside [Q1 - 1.5*IQR, Q3 + 1.5*IQR]
+   
+   Time Complexity: O(n²) for bubble sort + O(n) for detection = O(n²)
+   Space Complexity: O(n) for storing sorted arrays
+============================================ */
 
-// Reset filters
-function resetFilters() {
-    document.getElementById('startDate').value = '';
-    document.getElementById('endDate').value = '';
-    document.getElementById('minDistance').value = '';
-    document.getElementById('maxDistance').value = '';
-    document.getElementById('minFare').value = '';
-    document.getElementById('maxFare').value = '';
-    document.getElementById('passengerCount').value = '';
-    document.getElementById('timeOfDay').value = '';
+function runAnomalyDetection() {
+    let startTime = performance.now();
     
-    filteredData = tripData;
-    currentPage = 1;
-    updateAll();
-}
-
-// Update everything
-function updateAll() {
-    updateStats();
-    drawCharts();
+    // Detect anomalies in fare
+    let fareAnomalies = detectOutliers(tripData, 'fare');
+    
+    // Detect anomalies in speed
+    let speedAnomalies = detectOutliers(tripData, 'speed');
+    
+    // Detect anomalies in fare per km ratio
+    let fareRatioAnomalies = detectFareRatioAnomalies(tripData);
+    
+    // Combine all anomalies (remove duplicates manually)
+    let allAnomalies = combineAnomalies(fareAnomalies, speedAnomalies, fareRatioAnomalies);
+    
+    let endTime = performance.now();
+    let executionTime = (endTime - startTime).toFixed(2);
+    
+    // Update UI
+    document.getElementById('anomalyCount').textContent = allAnomalies.length;
+    document.getElementById('totalAnalyzed').textContent = tripData.length;
+    
+    displayAnomalies(allAnomalies, executionTime);
+    
+    // Mark anomalies in global data
+    anomalyFlags = {};
+    for(let i = 0; i < allAnomalies.length; i++) {
+        anomalyFlags[allAnomalies[i].trip.id] = allAnomalies[i];
+    }
+    
     updateTable();
-    updateInsight();
 }
 
-// Update stats
-function updateStats() {
-    let total = filteredData.length;
-    let totalFare = 0;
-    let totalDist = 0;
-    let totalDur = 0;
-    
-    for(let i = 0; i < filteredData.length; i++) {
-        totalFare += filteredData[i].fare;
-        totalDist += filteredData[i].distance;
-        totalDur += filteredData[i].duration;
+// Manual outlier detection using IQR method
+function detectOutliers(data, field) {
+    // Step 1: Extract values manually
+    let values = [];
+    for(let i = 0; i < data.length; i++) {
+        values[i] = data[i][field];
     }
     
-    document.getElementById('totalTrips').textContent = total;
-    document.getElementById('avgFare').textContent = '$' + (totalFare / total).toFixed(2);
-    document.getElementById('avgDistance').textContent = (totalDist / total).toFixed(2) + ' km';
-    document.getElementById('avgDuration').textContent = (totalDur / total).toFixed(1) + ' min';
+    // Step 2: Manual Bubble Sort (no built-in sort!)
+    let sortedValues = manualBubbleSort(values);
+    
+    // Step 3: Calculate Q1, Q3, IQR manually
+    let n = sortedValues.length;
+    let q1Index = Math.floor(n * 0.25);
+    let q3Index = Math.floor(n * 0.75);
+    let q1 = sortedValues[q1Index];
+    let q3 = sortedValues[q3Index];
+    let iqr = q3 - q1;
+    
+    // Step 4: Calculate bounds
+    let lowerBound = q1 - 1.5 * iqr;
+    let upperBound = q3 + 1.5 * iqr;
+    
+    // Step 5: Find outliers manually
+    let outliers = [];
+    for(let i = 0; i < data.length; i++) {
+        if(data[i][field] < lowerBound || data[i][field] > upperBound) {
+            outliers[outliers.length] = {
+                trip: data[i],
+                reason: field === 'fare' ? 
+                    'Unusual fare: $' + data[i][field].toFixed(2) + ' (normal range: $' + lowerBound.toFixed(2) + ' - $' + upperBound.toFixed(2) + ')' :
+                    'Unusual speed: ' + data[i][field].toFixed(2) + ' km/h (normal range: ' + lowerBound.toFixed(2) + ' - ' + upperBound.toFixed(2) + ' km/h)',
+                type: field
+            };
+        }
+    }
+    
+    return outliers;
 }
 
-// Draw all charts
-function drawCharts() {
-    drawHourChart();
-    drawFareChart();
-    drawSpeedChart();
-}
-
-// Draw hourly chart
-function drawHourChart() {
-    let hours = new Array(24).fill(0);
-    
-    for(let i = 0; i < filteredData.length; i++) {
-        let h = parseInt(filteredData[i].time.split(' ')[1].split(':')[0]);
-        hours[h]++;
+// Manual Bubble Sort implementation
+function manualBubbleSort(arr) {
+    let sorted = [];
+    // Copy array manually
+    for(let i = 0; i < arr.length; i++) {
+        sorted[i] = arr[i];
     }
     
-    let maxVal = Math.max(...hours);
-    let container = document.getElementById('hourChart');
-    container.innerHTML = '';
-    
-    let display = [0, 3, 6, 9, 12, 15, 18, 21];
-    for(let i = 0; i < display.length; i++) {
-        let h = display[i];
-        let bar = document.createElement('div');
-        bar.className = 'bar';
-        let height = (hours[h] / maxVal) * 100;
-        bar.style.height = height + '%';
-        
-        let lbl = document.createElement('div');
-        lbl.className = 'bar-label';
-        lbl.textContent = h + 'h';
-        bar.appendChild(lbl);
-        
-        let val = document.createElement('div');
-        val.className = 'bar-value';
-        val.textContent = hours[h];
-        bar.appendChild(val);
-        
-        container.appendChild(bar);
-    }
-}
-
-// Draw fare chart
-function drawFareChart() {
-    let ranges = ['0-5', '5-10', '10-15', '15-20', '20+'];
-    let fareTotals = [[], [], [], [], []];
-    
-    for(let i = 0; i < filteredData.length; i++) {
-        let d = filteredData[i].distance;
-        let f = filteredData[i].fare;
-        if(d < 5) fareTotals[0].push(f);
-        else if(d < 10) fareTotals[1].push(f);
-        else if(d < 15) fareTotals[2].push(f);
-        else if(d < 20) fareTotals[3].push(f);
-        else fareTotals[4].push(f);
-    }
-    
-    let avgFares = [];
-    for(let i = 0; i < fareTotals.length; i++) {
-        if(fareTotals[i].length > 0) {
-            let sum = 0;
-            for(let j = 0; j < fareTotals[i].length; j++) {
-                sum += fareTotals[i][j];
+    // Bubble sort
+    for(let i = 0; i < sorted.length - 1; i++) {
+        for(let j = 0; j < sorted.length - i - 1; j++) {
+            if(sorted[j] > sorted[j + 1]) {
+                // Manual swap
+                let temp = sorted[j];
+                sorted[j] = sorted[j + 1];
+                sorted[j + 1] = temp;
             }
-            avgFares.push(sum / fareTotals[i].length);
-        } else {
-            avgFares.push(0);
         }
     }
     
-    let maxVal = Math.max(...avgFares);
-    let container = document.getElementById('fareChart');
-    container.innerHTML = '';
-    
-    for(let i = 0; i < ranges.length; i++) {
-        let bar = document.createElement('div');
-        bar.className = 'bar';
-        let height = (avgFares[i] / maxVal) * 100;
-        bar.style.height = height + '%';
-        
-        let lbl = document.createElement('div');
-        lbl.className = 'bar-label';
-        lbl.textContent = ranges[i] + 'km';
-        bar.appendChild(lbl);
-        
-        let val = document.createElement('div');
-        val.className = 'bar-value';
-        val.textContent = '$' + avgFares[i].toFixed(1);
-        bar.appendChild(val);
-        
-        container.appendChild(bar);
-    }
+    return sorted;
 }
 
-// Draw speed chart
-function drawSpeedChart() {
-    let ranges = ['0-20', '20-40', '40-60', '60-80', '80+'];
-    let counts = [0, 0, 0, 0, 0];
+// Detect anomalies in fare/distance ratio
+function detectFareRatioAnomalies(data) {
+    let anomalies = [];
     
-    for(let i = 0; i < filteredData.length; i++) {
-        let s = filteredData[i].speed;
-        if(s < 20) counts[0]++;
-        else if(s < 40) counts[1]++;
-        else if(s < 60) counts[2]++;
-        else if(s < 80) counts[3]++;
-        else counts[4]++;
-    }
-    
-    let maxVal = Math.max(...counts);
-    let container = document.getElementById('speedChart');
-    container.innerHTML = '';
-    
-    for(let i = 0; i < ranges.length; i++) {
-        let bar = document.createElement('div');
-        bar.className = 'bar';
-        let height = (counts[i] / maxVal) * 100;
-        bar.style.height = height + '%';
+    for(let i = 0; i < data.length; i++) {
+        let ratio = data[i].fare / data[i].distance;
         
-        let lbl = document.createElement('div');
-        lbl.className = 'bar-label';
-        lbl.textContent = ranges[i];
-        bar.appendChild(lbl);
-        
-        let val = document.createElement('div');
-        val.className = 'bar-value';
-        val.textContent = counts[i];
-        bar.appendChild(val);
-        
-        container.appendChild(bar);
-    }
-}
-
-// Update table
-function updateTable() {
-    let start = (currentPage - 1) * rowsPerPage;
-    let end = start + rowsPerPage;
-    let pageData = filteredData.slice(start, end);
-    
-    let tbody = document.getElementById('tableBody');
-    tbody.innerHTML = '';
-    
-    for(let i = 0; i < pageData.length; i++) {
-        let row = tbody.insertRow();
-        row.insertCell(0).textContent = pageData[i].id;
-        row.insertCell(1).textContent = pageData[i].time;
-        row.insertCell(2).textContent = pageData[i].distance.toFixed(2);
-        row.insertCell(3).textContent = pageData[i].duration.toFixed(1);
-        row.insertCell(4).textContent = pageData[i].fare.toFixed(2);
-        row.insertCell(5).textContent = pageData[i].speed.toFixed(2);
-        row.insertCell(6).textContent = pageData[i].passengers;
-    }
-    
-    let totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    document.getElementById('pageNum').textContent = currentPage;
-    document.getElementById('totalPg').textContent = totalPages;
-    
-    document.getElementById('prevBtn').disabled = (currentPage === 1);
-    document.getElementById('nextBtn').disabled = (currentPage === totalPages);
-}
-
-// Pagination
-function prevPage() {
-    if(currentPage > 1) {
-        currentPage--;
-        updateTable();
-    }
-}
-
-function nextPage() {
-    let totalPages = Math.ceil(filteredData.length / rowsPerPage);
-    if(currentPage < totalPages) {
-        currentPage++;
-        updateTable();
-    }
-}
-
-// Sort table
-function sortBy(col) {
-    let fields = ['id', 'time', 'distance', 'duration', 'fare', 'speed', 'passengers'];
-    
-    if(sortCol === col) {
-        sortAsc = !sortAsc;
-    } else {
-        sortCol = col;
-        sortAsc = true;
-    }
-    
-    let field = fields[col];
-    
-    filteredData.sort(function(a, b) {
-        if(a[field] < b[field]) return sortAsc ? -1 : 1;
-        if(a[field] > b[field]) return sortAsc ? 1 : -1;
-        return 0;
-    });
-    
-    updateTable();
-}
-
-// Update insight
-function updateInsight() {
-    let hourCounts = new Array(24).fill(0);
-    
-    for(let i = 0; i < filteredData.length; i++) {
-        let h = parseInt(filteredData[i].time.split(' ')[1].split(':')[0]);
-        hourCounts[h]++;
-    }
-    
-    let maxCount = 0;
-    let peakHour = 0;
-    for(let i = 0; i < hourCounts.length; i++) {
-        if(hourCounts[i] > maxCount) {
-            maxCount = hourCounts[i];
-            peakHour = i;
+        // Check for suspicious patterns
+        if(ratio > 50) { // More than $50 per km
+            anomalies[anomalies.length] = {
+                trip: data[i],
+                reason: 'Suspicious fare ratio: $' + ratio.toFixed(2) + '/km (very high)',
+                type: 'ratio'
+            };
+        } else if(data[i].distance < 0.5 && data[i].fare > 30) {
+            anomalies[anomalies.length] = {
+                trip: data[i],
+                reason: 'Short trip with high fare: ' + data[i].distance + 'km costs $' + data[i].fare,
+                type: 'ratio'
+            };
+        } else if(data[i].speed > 150) {
+            anomalies[anomalies.length] = {
+                trip: data[i],
+                reason: 'Impossible speed: ' + data[i].speed.toFixed(2) + ' km/h',
+                type: 'speed'
+            };
         }
     }
     
-    let totalTrips = 0;
-    for(let i = 0; i < hourCounts.length; i++) {
-        totalTrips += hourCounts[i];
-    }
-    let avgPerHour = totalTrips / 24;
-    let multiplier = (maxCount / avgPerHour).toFixed(1);
-    
-    document.getElementById('mainInsight').textContent = 
-        'Peak hour is ' + peakHour + ':00 with ' + maxCount + ' trips (' + 
-        multiplier + 'x average). This shows concentrated demand during specific times.';
+    return anomalies;
 }
+
+// Manually combine arrays and remove duplicates
+function combineAnomalies(arr1, arr2, arr3) {
+    let combined = [];
+    let seen = {};
+    
+    // Add from arr1
+    for(let i = 0; i < arr1.length; i++) {
+        let id = arr1[i].trip.id;
+        if(!seen[id]) {
+            combined[combined.length] = arr1[i];
+            seen[id] = true;
+        }
+    }
+    
+    // Add from arr2
+    for(let i = 0; i < arr2.length; i++) {
+        let id = arr2[i].trip.id;
+        if(!seen[id]) {
+            combined[combined.length] = arr2[i];
+            seen[id] = true;
+        }
+    }
+    
+    // Add from arr3
+    for(let i = 0; i < arr3.length; i++) {
+        let id = arr3[i].trip.id;
+        if(!seen[id]) {
+            combined[combined.length] = arr3[i];
+            seen[id] = true;
+        }
+    }
+    
+    return combined;
+}
+
+// Display anomalies in UI
+function displayAnomalies(anomalies, execTime) {
+    let container = document.getElementById('anomalyResults');
+    container.innerHTML = '';
+    
+    if(anomalies.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #27ae60; padding: 20px;">✓ No anomalies detected! All trips appear normal.</p>';
+        return;
+    }
+    
+    // Show first 9 anomalies
+    let displayCount = anomalies.length > 9 ? 9 : anomalies.length;
+    for(let i = 0; i < displayCount; i++) {
+        let anomaly = anomalies[i];
+        let card = document.createElement('div');
+        card.className = 'anomaly-card';
+        
+        card.innerHTML = `
+            <div class="anomaly-card-header">
+                <h4>Trip ${anomaly.trip.id}</h4>
+                <span class="anomaly-badge">${anomaly.type.toUpperCase()}</span>
+            </div>
+            <div class="anomaly-details">
+                <div><strong>Time:</strong> ${anomaly.trip.time}</div>
+                <div><strong>Distance:</strong> ${anomaly.trip.distance} km</div>
+                <div><strong>Fare:</strong> $${anomaly.trip.fare}</div>
+                <div><strong>Speed:</strong> ${anomaly.trip.speed.toFixed(2)} km/h</div>
+                <div class="anomaly-reason">${anomaly.reason}</div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    }
+    
+}
+    

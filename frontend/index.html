@@ -92,6 +92,20 @@
                 </div>
             </div>
 
+            <!-- Anomaly Detection Section - NEW -->
+            <div class="anomaly-section">
+                <h2>⚠️ Anomaly Detection</h2>
+                <p class="anomaly-description">Custom algorithm to detect suspicious trips based on fare, speed, and distance patterns</p>
+                <div class="anomaly-controls">
+                    <button class="detect-btn" onclick="runAnomalyDetection()">Run Anomaly Detection</button>
+                    <div class="anomaly-stats">
+                        <span>Anomalies Found: <strong id="anomalyCount">0</strong></span>
+                        <span>Total Analyzed: <strong id="totalAnalyzed">0</strong></span>
+                    </div>
+                </div>
+                <div id="anomalyResults" class="anomaly-results"></div>
+            </div>
+
             <!-- Insights -->
             <div class="insight-box">
                 <h3>Key Insight:</h3>
@@ -128,6 +142,7 @@
                             <th onclick="sortBy(4)">Fare ($)</th>
                             <th onclick="sortBy(5)">Speed (km/h)</th>
                             <th onclick="sortBy(6)">Passengers</th>
+                            <th>Status</th>
                         </tr>
                     </thead>
                     <tbody id="tableBody">
