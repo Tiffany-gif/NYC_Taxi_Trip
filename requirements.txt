@@ -11,3 +11,4 @@ six==1.17.0
 pytz==2025.2
 python-dateutil==2.9.0.post0
 tzdata==2025.2
+python-dotenv==1.0.1

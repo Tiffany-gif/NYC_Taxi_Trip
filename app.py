@@ -1,6 +1,8 @@
 from flask import Flask
-from api.trip_endpoints import trips_bp
-from api.insights_endpoints import insights_bp
+from backend.api.trip_endpoints import trips_bp
+from backend.api.insights_endpoints import insights_bp
+from backend.config.db_connection import get_db_connection
+from backend.utils.db_insert import insert_all_from_cleaned
 
 
 def create_app():
@@ -26,5 +28,21 @@ def create_app():
 
 
 if __name__ == '__main__':
+    # Auto-ingest on startup if trips table is empty
+    try:
+        conn = get_db_connection()
+        if conn is None:
+            raise RuntimeError("Database connection failed")
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*) FROM trips")
+        count = cur.fetchone()[0]
+        cur.close()
+        conn.close()
+        if count == 0:
+            inserted = insert_all_from_cleaned()
+            print(f"Auto-ingest completed. Inserted {inserted} rows from data/cleaned.")
+    except Exception as e:
+        print(f"Auto-ingest skipped due to error: {e}")
+
     app = create_app()
     app.run(debug=True)

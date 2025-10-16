@@ -1,13 +1,12 @@
 """
 Routes for insights and analytics API endpoints
 """
-from utils.efficiency_algorithm import rank_trips_by_efficiency
-from config.db_config import get_db_config
+from backend.utils.efficiency_algorithm import rank_trips_by_efficiency
+from backend.config.db_connection import get_db_connection
 import os
 import sys
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify
 import mysql.connector
-
 
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if backend_dir not in sys.path:
@@ -16,24 +15,13 @@ if backend_dir not in sys.path:
 insights_bp = Blueprint('insights', __name__)
 
 
-def get_db_connection():
-    """Helper function to get a database connection"""
-    try:
-        config = get_db_config()
-        conn = mysql.connector.connect(**config)
-        return conn
-    except mysql.connector.Error as e:
-        print(f"Error connecting to MySQL: {e}")
-        return None
-
-
 @insights_bp.route('/top-efficient-trips', methods=['POST'])
 def top_efficient_trips():
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         cursor.execute(
-            "SELECT id, trip_distance_km, trip_duration_min, fare_amount FROM trips LIMIT 100")
+            "SELECT trip_id, trip_distance_km, trip_duration_min, fare_amount FROM trips LIMIT 100")
         trips = cursor.fetchall()
         ranked_trips = rank_trips_by_efficiency(trips)
         cursor.close()
@@ -45,14 +33,12 @@ def top_efficient_trips():
 
 @insights_bp.route('/stats', methods=['GET'])
 def get_trip_stats():
-    """Get statistics about the trips data"""
     try:
         conn = get_db_connection()
         if not conn:
             return jsonify({"error": "Database connection failed"}), 500
 
         cursor = conn.cursor(dictionary=True)
-
         stats = {}
 
         cursor.execute("SELECT COUNT(*) as count FROM trips")
@@ -90,14 +76,12 @@ def get_trip_stats():
 
 @insights_bp.route('/hourly-pattern', methods=['GET'])
 def get_hourly_pattern():
-    """Get trip counts by hour of day"""
     try:
         conn = get_db_connection()
         if not conn:
             return jsonify({"error": "Database connection failed"}), 500
 
         cursor = conn.cursor(dictionary=True)
-
         query = """
         SELECT HOUR(pickup_datetime) as hour, COUNT(*) as trip_count 
         FROM trips 
