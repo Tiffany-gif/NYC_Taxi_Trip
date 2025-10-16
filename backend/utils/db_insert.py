@@ -1,11 +1,37 @@
 import os
 from typing import Optional, List, Tuple
+# from mysql.connector import MySQLConnection
 
 import numpy as np
 import pandas as pd
 import mysql.connector
 
-from backend.config.db_connection import get_db_connection
+# from config.db_connection import get_db_connection
+
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def get_db_config() -> dict:
+    return {
+        "host": os.getenv("DB_HOST", "localhost"),
+        "user": os.getenv("DB_USER", "nyc_user"),
+        "password": os.getenv("DB_PASSWORD", "nyc123!"),
+        "database": os.getenv("DB_NAME", "trip_data"),
+    }
+
+def get_db_connection() -> Optional[mysql.connector.MySQLConnection]:
+    """Return a new MySQL connection using config."""
+    try:
+        config = get_db_config()
+        conn = mysql.connector.connect(**config)
+        print("connected to DB")
+        return conn
+    except mysql.connector.Error as error:
+        print(f"Error connecting to MySQL: {error}")
+        return None
+
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CLEANED_DIR = os.path.join(BASE_DIR, "data/cleaned")
@@ -33,8 +59,8 @@ def insert_dataframe(df: pd.DataFrame) -> int:
 
         vendors = df['vendor_id'].dropna().unique()
         for vendor in vendors:
-            cursor.execute("INSERT IGNORE INTO vendors (vendor_id) VALUES (%s)", (vendor,))
-
+            cursor.execute("INSERT IGNORE INTO vendors (vendor_id) VALUES (%s)", (int(vendor),))
+            
         insert_trip_query = (
             "INSERT INTO trips ("
             "vendor_id, pickup_datetime, dropoff_datetime, passenger_count, "
@@ -50,9 +76,10 @@ def insert_dataframe(df: pd.DataFrame) -> int:
                 row['pickup_latitude'], row['pickup_longitude'],
                 row['dropoff_latitude'], row['dropoff_longitude']
             )
+            # print(row)
             trip_duration_min = row['trip_duration'] / 60
             speed_kmh = trip_distance / (trip_duration_min / 60) if trip_duration_min > 0 else 0
-            fare_per_km = row['fare_amount'] / trip_distance if trip_distance > 0 else 0
+            fare_per_km = row['fare_amount'] / trip_distance if trip_distance > 0 and 'fare_amount' in row else 0
 
             cursor.execute(
                 insert_trip_query,
@@ -70,11 +97,12 @@ def insert_dataframe(df: pd.DataFrame) -> int:
                     trip_distance,
                     trip_duration_min,
                     speed_kmh,
-                    fare_per_km,
+                    fare_per_km if 'fare_amount' in row else 0
                 ),
             )
             rows_inserted += 1
-
+            if _ == 1000:
+                conn.commit()
         conn.commit()
         return rows_inserted
     finally:

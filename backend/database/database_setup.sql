@@ -27,7 +27,7 @@ CREATE TABLE trips (
     trip_duration INT NOT NULL CHECK (trip_duration > 0),
     trip_distance_km FLOAT NOT NULL CHECK (trip_distance_km >= 0),
     trip_duration_min FLOAT NOT NULL CHECK (trip_duration_min > 0),
-    speed_kmh FLOAT NOT NULL CHECK (speed_kmh >= 0 AND speed_kmh <= 150),
+    speed_kmh FLOAT NOT NULL,
     fare_per_km FLOAT CHECK (fare_per_km >= 0),
 
     CONSTRAINT fk_vendor FOREIGN KEY (vendor_id) REFERENCES vendors(vendor_id)

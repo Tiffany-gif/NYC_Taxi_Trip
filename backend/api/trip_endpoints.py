@@ -1,34 +1,21 @@
-"""
-Routes for trip data API endpoints
-"""
-from backend.config.db_connection import get_db_connection
-import os
-import sys
 from flask import Blueprint, jsonify, request
-import mysql.connector
+from backend.config.db_connection import get_db_cursor
 from backend.utils.db_insert import insert_from_csv, insert_dataframe
 
-
-backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if backend_dir not in sys.path:
-    sys.path.append(backend_dir)
-# Create a Blueprint for trips routes
 trips_bp = Blueprint('trips', __name__)
-
 
 @trips_bp.route('/', methods=['GET'])
 def get_trips():
+    limit = request.args.get('limit', default=100, type=int)
+    offset = request.args.get('offset', default=0, type=int)
+    min_speed = request.args.get('min_speed', default=0, type=float)
+    max_speed = request.args.get('max_speed', type=float)
+
+    conn, cursor = get_db_cursor()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
+
     try:
-        limit = request.args.get('limit', default=100, type=int)
-        offset = request.args.get('offset', default=0, type=int)
-        min_speed = request.args.get('min_speed', default=0, type=float)
-        max_speed = request.args.get('max_speed', type=float)
-
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({"error": "Database connection failed"}), 500
-        cursor = conn.cursor(dictionary=True)
-
         query = "SELECT * FROM trips WHERE 1=1"
         params = []
 
@@ -59,23 +46,20 @@ def get_trips():
         cursor.execute(count_query, count_params)
         total_count = cursor.fetchone()['count']
 
-        cursor.close()
-        conn.close()
-
         return jsonify({
             "trips": trips,
             "total_count": total_count,
             "limit": limit,
             "offset": offset
         })
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    finally:
+        cursor.close()
+        conn.close()
 
 @trips_bp.route('/ingest', methods=['POST'])
 def ingest_trips():
-    """Ingest trips from CSV (path in JSON body optional: {"csv_path": "..."})."""
     try:
         data = request.get_json(silent=True) or {}
         csv_path = data.get('csv_path') if isinstance(data, dict) else None
@@ -86,37 +70,32 @@ def ingest_trips():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 @trips_bp.route('/<int:trip_id>', methods=['GET'])
 def get_trip(trip_id):
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return jsonify({"error": "Database connection failed"}), 500
+    conn, cursor = get_db_cursor()
+    if not conn:
+        return jsonify({"error": "Database connection failed"}), 500
 
-        cursor = conn.cursor(dictionary=True)
+    try:
         query = "SELECT * FROM trips WHERE trip_id = %s"
         cursor.execute(query, (trip_id,))
         trip = cursor.fetchone()
-
-        cursor.close()
-        conn.close()
-
         if trip:
             return jsonify(trip)
         else:
             return jsonify({"error": "Trip not found"}), 404
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    finally:
+        cursor.close()
+        conn.close()
 
 if __name__ == "__main__":
-    # Testing the database connection
     print("Testing database connection...")
-    conn = get_db_connection()
+    conn, cursor = get_db_cursor()
     if conn:
         print("Database connection successful!")
+        cursor.close()
         conn.close()
     else:
         print("Database connection failed!")

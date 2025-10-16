@@ -18,7 +18,10 @@ def get_db_connection() -> Optional[MySQLConnection]:
     """Return a new MySQL connection using config."""
     try:
         config = get_db_config()
-        return mysql.connector.connect(**config)
+        
+        conn = mysql.connector.connect(**config)
+        print("connected to DB")
+        return conn
     except mysql.connector.Error as error:
         print(f"Error connecting to MySQL: {error}")
         return None
