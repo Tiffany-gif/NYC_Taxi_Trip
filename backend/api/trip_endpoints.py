@@ -7,15 +7,12 @@ import sys
 from flask import Blueprint, jsonify, request
 import mysql.connector
 
-# Add the backend directory to the path for imports
+
 backend_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if backend_dir not in sys.path:
     sys.path.append(backend_dir)
 
-# Import config after path is set
 
-
-# Create a Blueprint for trips routes
 trips_bp = Blueprint('trips', __name__)
 
 
@@ -34,13 +31,12 @@ def get_db_connection():
 def get_trips():
     """Get trips with optional filtering"""
     try:
-        # Get query parameters
+
         limit = request.args.get('limit', default=100, type=int)
         offset = request.args.get('offset', default=0, type=int)
         min_speed = request.args.get('min_speed', default=0, type=float)
         max_speed = request.args.get('max_speed', type=float)
 
-        # Connect to the database
         conn = get_db_connection()
         if not conn:
             return jsonify({"error": "Database connection failed"}), 500
@@ -123,7 +119,7 @@ def get_trip(trip_id):
 
 
 if __name__ == "__main__":
-    # Test the database connection
+    # Testing the database connection
     print("Testing database connection...")
     conn = get_db_connection()
     if conn:
